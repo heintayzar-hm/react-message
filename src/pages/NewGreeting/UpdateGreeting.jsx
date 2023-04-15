@@ -1,58 +1,57 @@
-import React, { useEffect, useState } from "react";
-import FormInput from "../../components/FormInput";
-import SmallErrorMessage from "../../components/SmallErrorMessage";
-import { useNavigate, useParams } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import { createMessageThunk, getMessageThunk, updateMessageThunk } from "../../store/messageSlice/messageSlice";
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import * as Yup from 'yup';
+import FormInput from '../../components/FormInput';
+import SmallErrorMessage from '../../components/SmallErrorMessage';
+import { getMessageThunk, updateMessageThunk } from '../../store/messageSlice/messageSlice';
 
 const createGreetingSchema = Yup.object().shape({
-    header: Yup.string().required("Header is required").min(3, "Header must be at least 3 characters").max(50, "Header must be less than 50 characters"),
-    content: Yup.string().required("Content is required").min(3, "Content must be at least 3 characters").max(500, "Content must be less than 500 characters"),
-  });
+  header: Yup.string().required('Header is required').min(3, 'Header must be at least 3 characters').max(50, 'Header must be less than 50 characters'),
+  content: Yup.string().required('Content is required').min(3, 'Content must be at least 3 characters').max(500, 'Content must be less than 500 characters'),
+});
 
 const UpdateGreeting = () => {
-    const navigate = useNavigate();
-    const dispatch = useDispatch();
-    const [errors, setErrors] = useState({});
-    const { id } = useParams();
-    const greetingData = useSelector((state) => state.messages.message);
-    const [greeting, setGreeting] = useState(greetingData);
-    useEffect(() => {
-        dispatch(getMessageThunk(parseInt(id)));
-    }, [dispatch, id]);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [errors, setErrors] = useState({});
+  const { id } = useParams();
+  const greetingData = useSelector((state) => state.messages.message);
+  const [greeting, setGreeting] = useState(greetingData);
+  useEffect(() => {
+    dispatch(getMessageThunk(Number(id)));
+  }, [dispatch, id]);
 
-    useEffect(() => {
-        if(greetingData) {
-            setGreeting(greetingData);
-        }
-    }, [greetingData]);
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setGreeting((prev) => ({ ...prev, [name]: value }));
+  useEffect(() => {
+    if (greetingData) {
+      setGreeting(greetingData);
     }
+  }, [greetingData]);
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setGreeting((prev) => ({ ...prev, [name]: value }));
+  };
 
-    const handelSubmit = (e) => {
-        e.preventDefault();
-        createGreetingSchema.validate(greeting, { abortEarly: false }).then(() => {
+  const handelSubmit = (e) => {
+    e.preventDefault();
+    createGreetingSchema.validate(greeting, { abortEarly: false }).then(() => {
+      dispatch(updateMessageThunk(greeting)).then(() => {
+        navigate('/');
+      }).catch((err) => {
+        setErrors(err);
+      });
+    }).catch((err) => {
+      const errors = err.inner.reduce((acc, curr) => {
+        acc[curr.path] = curr.message;
+        return acc;
+      }, {});
+      setErrors(errors);
+    });
+  };
 
-            dispatch(updateMessageThunk(greeting)).then(() => {
-                navigate("/");
-            }).catch((err) => {
-                setErrors(err);
-            });
-        }).catch((err) => {
-            const errors = err.inner.reduce((acc, curr) => {
-                acc[curr.path] = curr.message;
-                return acc;
-            }, {});
-            setErrors(errors);
-        });
-    }
-
-    if(!greeting) return (<div>Loading...</div>);
-    return (
-        <section className="bg-gray-50 dark:bg-gray-900 ">
+  if (!greeting) return (<div>Loading...</div>);
+  return (
+    <section className="bg-gray-50 dark:bg-gray-900 ">
       <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto lg:py-0">
         <h1 className="flex font-secondary items-center mb-6 text-2xl font-semibold text-gray-900 dark:text-white">
           Hi Welcome to my greetings
@@ -94,19 +93,16 @@ const UpdateGreeting = () => {
                 {errors.content && <SmallErrorMessage message={errors.content} />}
               </div>
 
-
-
-                            <button type="submit" className="w-full flex justify-center items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg">
-                                Update Greeting
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 animate-bounce" viewBox="0 0 20 20" fill="currentColor">
-                                </svg>
-                            </button>
+              <button type="submit" className="w-full flex justify-center items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg">
+                Update Greeting
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 animate-bounce" viewBox="0 0 20 20" fill="currentColor" />
+              </button>
             </form>
           </div>
         </div>
       </div>
     </section>
-    );
-}
+  );
+};
 
 export default UpdateGreeting;
